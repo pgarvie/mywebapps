@@ -99,8 +99,8 @@ try:
             for i, cat in enumerate(categories):
                 with tabs[i]:
                     apps_cat = df[df['categorie'] == cat]
-                    # GRILLE DE 6 COLONNES pour des tuiles plus petites
-                    nb_cols = 6
+                    # GRILLE DE 8 COLONNES pour des tuiles plus petites
+                    nb_cols = 8
                     cols = st.columns(nb_cols)
                     for idx, row in enumerate(apps_cat.itertuples()):
                         with cols[idx % nb_cols]:
