@@ -36,7 +36,7 @@ with st.sidebar:
     st.markdown("## 📂 Navigation")
     choix = st.radio(
         "Choisir l'univers :",
-        ["General", "Finance", "Musique"],
+        ["General", "SMART Trading", "Finance", "Musique"],
         key="nav_radio"
     )
     st.divider()
