@@ -39,7 +39,7 @@ with st.sidebar:
     # ATTENTION : Ces noms doivent être EXACTEMENT les mêmes que vos onglets Google Sheets
     univers_choisi = st.radio(
         "Choisir un univers :",
-        ["Général", "Finance", "Musique"], # Modifiez ces noms selon vos besoins
+        ["General", "Finance", "Musique"], # Modifiez ces noms selon vos besoins
         index=0
     )
     
