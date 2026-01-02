@@ -2,10 +2,10 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
-# 1. Config
+# 1. Configuration de la page
 st.set_page_config(page_title="Mon Dashboard", page_icon="🚀", layout="wide")
 
-# 2. CSS Personnalisé
+# 2. CSS Personnalisé (Style & Couleurs)
 st.markdown("""
 <style>
     /* Fond de l'application */
@@ -15,13 +15,10 @@ st.markdown("""
     [data-testid="stSidebar"] {
         background-color: #f0f2f6 !important;
     }
-    /* TEXTE EN NOIR DANS LA SIDEBAR */
-    [data-testid="stSidebar"] .stText, 
-    [data-testid="stSidebar"] label, 
-    [data-testid="stSidebar"] p, 
-    [data-testid="stSidebar"] h1,
-    [data-testid="stSidebar"] .stMarkdown {
-        color: black !important;
+    
+    /* FORCE LE TEXTE EN NOIR DANS LA SIDEBAR */
+    [data-testid="stSidebar"] * {
+        color: #000000 !important;
     }
 
     /* Style des tuiles au centre */
@@ -33,7 +30,11 @@ st.markdown("""
         display: flex; align-items: center; justify-content: center;
         text-decoration: none; font-weight: bold;
     }
-    h1, h3 { color: white !important; }
+    .stLinkButton > a:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-color: #667eea !important;
+    }
+    h1, h3 { color: white !important; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -42,30 +43,26 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 # 4. BARRE LATÉRALE
 with st.sidebar:
-    st.markdown("### 📂 Navigation")
+    st.markdown("## 📂 Navigation")
     choix = st.radio(
         "Choisir l'univers :",
         ["General", "Finance", "Musique"],
-        key="nav"
+        key="nav_radio"
     )
     st.divider()
-    if st.button("🔄 Forcer l'actualisation"):
+    if st.button("🔄 Actualiser les données"):
         st.cache_data.clear()
         st.rerun()
 
-# 5. CHARGEMENT DES DONNÉES (Version Robuste)
+# 5. CHARGEMENT DES DONNÉES
 @st.cache_data(ttl=60)
 def get_data(nom_onglet):
-    try:
-        # Tentative avec la méthode worksheet directe
-        url = st.secrets["connections"]["gsheets"]["spreadsheet"]
-        return conn.read(spreadsheet=url, worksheet=nom_onglet)
-    except Exception:
-        # Méthode de secours si le worksheet name cause une erreur 400
-        # On lit tout et on filtre manuellement par onglet si nécessaire
-        return conn.read(spreadsheet=url)
+    # Récupération de l'URL depuis les secrets
+    url = st.secrets["connections"]["gsheets"]["spreadsheet"]
+    # Lecture spécifique de l'onglet
+    return conn.read(spreadsheet=url, worksheet=nom_onglet)
 
-# 6. AFFICHAGE
+# 6. AFFICHAGE PRINCIPAL
 st.markdown(f"<h1>🚀 Univers : {choix}</h1>", unsafe_allow_html=True)
 
 try:
@@ -73,29 +70,32 @@ try:
     
     if df is not None and not df.empty:
         # Barre de recherche
-        search = st.text_input("🔍 Rechercher...", label_visibility="collapsed")
+        search = st.text_input("🔍 Rechercher...", label_visibility="collapsed", key="search_bar")
+        
         if search:
             df = df[df['nom'].str.contains(search, case=False, na=False)]
 
-        # Onglets de catégories
+        # Création des onglets par catégorie
         categories = df['categorie'].unique()
-        tabs = st.tabs(list(categories))
+        if len(categories) > 0:
+            tabs = st.tabs(list(categories))
 
-        for i, cat in enumerate(categories):
-            with tabs[i]:
-                apps_cat = df[df['categorie'] == cat]
-                cols = st.columns(4)
-                for idx, row in enumerate(apps_cat.itertuples()):
-                    with cols[idx % 4]:
-                        st.link_button(f"{row.icone} {row.nom}", row.url, use_container_width=True)
+            for i, cat in enumerate(categories):
+                with tabs[i]:
+                    apps_cat = df[df['categorie'] == cat]
+                    cols = st.columns(4)
+                    for idx, row in enumerate(apps_cat.itertuples()):
+                        with cols[idx % 4]:
+                            st.link_button(
+                                label=f"{row.icone} {row.nom}", 
+                                url=row.url, 
+                                use_container_width=True
+                            )
+        else:
+            st.info("Ajoutez une catégorie dans votre fichier Excel pour voir les applications.")
     else:
-        st.warning(f"Aucune donnée trouvée dans l'onglet '{choix}'.")
+        st.warning(f"L'onglet '{choix}' semble vide ou n'est pas accessible.")
 
 except Exception as e:
     st.error(f"Erreur de connexion : {e}")
-    st.info("Vérifiez que votre Google Sheet est partagé en 'Anyone with the link' (Viewer).")}' semble vide.")
-
-except Exception as e:
-    st.error(f"Erreur de lecture de l'onglet '{choix}'.")
-    st.info("Vérifiez que le nom de l'onglet dans Google Sheets est exactement le même que dans le menu à gauche.")
-    st.write(e)
+    st.info("Vérifiez que l'onglet dans Google Sheets s'appelle exactement comme dans le menu.")
