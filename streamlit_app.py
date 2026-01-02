@@ -6,11 +6,10 @@ st.set_page_config(page_title="Mon Dashboard Pro", page_icon="🚀", layout="wid
 SHEET_ID = "1nhlDCHOQbXWYVRuMfyCrA7tgTIuA_qtFy5HDkFvQqBk"
 BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx"
 
-# CSS pour le look Microsoft
+# CSS amélioré pour un look identique à Microsoft
 st.markdown("""
 <style>
-    .stApp { background-color: #ffffff; } /* Fond blanc comme MS */
-    
+    .stApp { background-color: #ffffff; }
     [data-testid="stSidebar"] { background-color: #f3f2f1 !important; }
     [data-testid="stSidebar"] * { color: #323130 !important; }
 
@@ -20,42 +19,51 @@ st.markdown("""
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 15px;
+        padding: 10px;
         border: 1px solid #edebe9;
         border-radius: 4px;
         background-color: #ffffff;
-        text-decoration: none;
+        text-decoration: none !important; /* Enlever le soulignement */
         transition: all 0.2s;
         height: 110px;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
     }
     .app-card:hover {
         background-color: #f3f2f1;
         border-color: #a19f9d;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
     }
+    
+    /* Image du logo */
     .app-logo {
-        width: 40px;
-        height: 40px;
+        width: 42px;
+        height: 42px;
         margin-bottom: 10px;
         object-fit: contain;
+        border-radius: 4px;
     }
+    
+    /* Emoji si pas d'image */
     .app-emoji {
-        font-size: 30px;
-        margin-bottom: 5px;
+        font-size: 32px;
+        margin-bottom: 8px;
     }
+    
+    /* Nom de l'application */
     .app-name {
-        color: #323130;
+        color: #323130 !important;
         font-size: 0.85rem;
         font-weight: 500;
         text-align: center;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
+        text-decoration: none !important;
+        line-height: 1.2;
     }
-    h1 { color: #323130 !important; font-weight: 600; font-size: 1.5rem !important; }
+    
+    /* Enlever les soulignements des liens par défaut */
+    a { text-decoration: none !important; }
+    
+    h1 { color: #323130 !important; font-weight: 600; font-size: 1.4rem !important; margin-bottom: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -71,8 +79,9 @@ def get_data_from_sheet(sheet_name):
 try:
     liste_onglets = get_all_sheet_names()
     with st.sidebar:
-        st.markdown("## 📂 Mes Applications")
+        st.markdown("### 📂 Mes Applications")
         choix = st.radio("Navigation", liste_onglets)
+        st.divider()
         if st.button("🔄 Actualiser"):
             st.cache_data.clear()
             st.rerun()
@@ -82,7 +91,6 @@ try:
     df = get_data_from_sheet(choix)
     
     if df is not None and not df.empty:
-        # Onglets de catégories
         categories = df['categorie'].unique()
         tabs = st.tabs(list(categories))
 
@@ -94,17 +102,17 @@ try:
                 
                 for idx, row in enumerate(apps_cat.itertuples()):
                     with cols[idx % nb_cols]:
-                        ico = str(getattr(row, 'icone', '🌐'))
+                        # Nettoyage de la valeur de l'icône (enlève les espaces)
+                        ico = str(getattr(row, 'icone', '🌐')).strip()
                         nom = getattr(row, 'nom', 'App')
                         url = getattr(row, 'url', '#')
                         
-                        # Déterminer si c'est une image URL ou un Emoji
+                        # Détection : Image ou Emoji
                         if ico.startswith("http"):
-                            icon_html = f'<img src="{ico}" class="app-logo">'
+                            icon_html = f'<img src="{ico}" class="app-logo" onerror="this.src=\'https://www.google.com/s2/favicons?sz=64&domain={url}\'">'
                         else:
                             icon_html = f'<div class="app-emoji">{ico}</div>'
                         
-                        # Création de la tuile personnalisée en HTML/CSS
                         st.markdown(f"""
                             <a href="{url}" target="_blank" class="app-card">
                                 {icon_html}
