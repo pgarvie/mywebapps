@@ -1,66 +1,64 @@
 import streamlit as st
 import pandas as pd
 
-# 1. Configuration de la page
-st.set_page_config(page_title="Mon Dashboard Dynamique", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="Mon Dashboard Pro", page_icon="🚀", layout="wide")
 
-# ID de votre Google Sheet
 SHEET_ID = "1nhlDCHOQbXWYVRuMfyCrA7tgTIuA_qtFy5HDkFvQqBk"
 BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx"
 
-# 2. CSS Personnalisé pour des tuiles style "Microsoft Apps"
+# CSS pour le look Microsoft
 st.markdown("""
 <style>
-    .stApp { background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%); }
+    .stApp { background-color: #ffffff; } /* Fond blanc comme MS */
     
-    /* SIDEBAR : Fond gris clair et texte noir */
-    [data-testid="stSidebar"] { background-color: #f0f2f6 !important; }
-    [data-testid="stSidebar"] * { color: #000000 !important; }
+    [data-testid="stSidebar"] { background-color: #f3f2f1 !important; }
+    [data-testid="stSidebar"] * { color: #323130 !important; }
 
-    /* CENTRE : Tuiles COMPACTES (Style Microsoft) */
-    .stLinkButton > a {
-        width: 100%; 
-        height: 90px !important; /* Hauteur réduite */
-        background: rgba(255, 255, 255, 0.08) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 8px !important; 
-        color: white !important;
-        display: flex !important;
-        flex-direction: column !important; /* Icone au dessus du texte */
-        align-items: center !important;
-        justify-content: center !important;
-        text-decoration: none !important;
-        padding: 5px !important;
-        transition: all 0.2s ease-in-out !important;
+    /* Conteneur de la tuile */
+    .app-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        border: 1px solid #edebe9;
+        border-radius: 4px;
+        background-color: #ffffff;
+        text-decoration: none;
+        transition: all 0.2s;
+        height: 110px;
+        margin-bottom: 10px;
     }
-    
-    .stLinkButton > a:hover {
-        background: rgba(255, 255, 255, 0.2) !important;
-        border-color: #ffffff !important;
-        transform: scale(1.02);
+    .app-card:hover {
+        background-color: #f3f2f1;
+        border-color: #a19f9d;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-
-    /* Ajustement de la taille de la police dans les boutons */
-    .stLinkButton p {
-        font-size: 0.85rem !important;
-        line-height: 1.2 !important;
-        text-align: center !important;
-        margin-top: 5px !important;
+    .app-logo {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 10px;
+        object-fit: contain;
     }
-
-    h1, h3 { color: white !important; text-align: center; font-weight: 300; }
-    
-    /* Cacher les bordures inutiles des onglets */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] { 
-        background-color: rgba(255,255,255,0.05); 
-        border-radius: 5px; 
-        color: white; 
+    .app-emoji {
+        font-size: 30px;
+        margin-bottom: 5px;
     }
+    .app-name {
+        color: #323130;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    h1 { color: #323130 !important; font-weight: 600; font-size: 1.5rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. FONCTIONS DE CHARGEMENT
 @st.cache_data(ttl=60)
 def get_all_sheet_names():
     xl = pd.ExcelFile(BASE_URL, engine='openpyxl')
@@ -70,48 +68,49 @@ def get_all_sheet_names():
 def get_data_from_sheet(sheet_name):
     return pd.read_excel(BASE_URL, sheet_name=sheet_name, engine='openpyxl')
 
-# 4. EXÉCUTION
 try:
     liste_onglets = get_all_sheet_names()
-
     with st.sidebar:
-        st.markdown("## 📂 Navigation")
-        choix = st.radio("Choisir l'univers :", liste_onglets, key="nav_radio")
-        st.divider()
-        if st.button("🔄 Actualiser les données"):
+        st.markdown("## 📂 Mes Applications")
+        choix = st.radio("Navigation", liste_onglets)
+        if st.button("🔄 Actualiser"):
             st.cache_data.clear()
             st.rerun()
 
-    st.markdown(f"<h1>🚀 {choix}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1>{choix}</h1>", unsafe_allow_html=True)
 
     df = get_data_from_sheet(choix)
     
     if df is not None and not df.empty:
-        search = st.text_input("🔍 Rechercher...", label_visibility="collapsed", key="search_bar")
-        
-        if search and 'nom' in df.columns:
-            df = df[df['nom'].str.contains(search, case=False, na=False)]
+        # Onglets de catégories
+        categories = df['categorie'].unique()
+        tabs = st.tabs(list(categories))
 
-        if 'categorie' in df.columns:
-            categories = df['categorie'].unique()
-            tabs = st.tabs(list(categories))
-
-            for i, cat in enumerate(categories):
-                with tabs[i]:
-                    apps_cat = df[df['categorie'] == cat]
-                    # GRILLE DE 8 COLONNES pour des tuiles plus petites
-                    nb_cols = 8
-                    cols = st.columns(nb_cols)
-                    for idx, row in enumerate(apps_cat.itertuples()):
-                        with cols[idx % nb_cols]:
-                            ico = getattr(row, 'icone', '🌐')
-                            nom = getattr(row, 'nom', 'App')
-                            url = getattr(row, 'url', '#')
-                            st.link_button(label=f"{ico}\n{nom}", url=url, use_container_width=True)
-        else:
-            st.warning("Colonne 'categorie' manquante.")
-    else:
-        st.info(f"L'onglet '{choix}' est vide.")
+        for i, cat in enumerate(categories):
+            with tabs[i]:
+                apps_cat = df[df['categorie'] == cat]
+                nb_cols = 6
+                cols = st.columns(nb_cols)
+                
+                for idx, row in enumerate(apps_cat.itertuples()):
+                    with cols[idx % nb_cols]:
+                        ico = str(getattr(row, 'icone', '🌐'))
+                        nom = getattr(row, 'nom', 'App')
+                        url = getattr(row, 'url', '#')
+                        
+                        # Déterminer si c'est une image URL ou un Emoji
+                        if ico.startswith("http"):
+                            icon_html = f'<img src="{ico}" class="app-logo">'
+                        else:
+                            icon_html = f'<div class="app-emoji">{ico}</div>'
+                        
+                        # Création de la tuile personnalisée en HTML/CSS
+                        st.markdown(f"""
+                            <a href="{url}" target="_blank" class="app-card">
+                                {icon_html}
+                                <div class="app-name">{nom}</div>
+                            </a>
+                        """, unsafe_allow_html=True)
 
 except Exception as e:
     st.error(f"Erreur : {e}")
