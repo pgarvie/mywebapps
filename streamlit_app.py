@@ -4,14 +4,22 @@ import pandas as pd
 # 1. Configuration de la page
 st.set_page_config(page_title="Mon Dashboard Dynamique", page_icon="🚀", layout="wide")
 
-# 2. CSS Personnalisé (Sidebar Texte Noir + Tuiles blanches)
+# ID de votre Google Sheet
+SHEET_ID = "1nhlDCHOQbXWYVRuMfyCrA7tgTIuA_qtFy5HDkFvQqBk"
+BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx"
+
+# 2. CSS Personnalisé
 st.markdown("""
 <style>
     .stApp { background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%); }
     
-    /* SIDEBAR : Fond gris clair et TEXTE NOIR */
+    /* SIDEBAR : Fond gris clair */
     [data-testid="stSidebar"] { background-color: #f0f2f6 !important; }
-    [data-testid="stSidebar"] * { color: #000000 !important; }
+    
+    /* TEXTE NOIR DANS LA SIDEBAR (Titres, Radio boutons, labels) */
+    [data-testid="stSidebar"] * { 
+        color: #000000 !important; 
+    }
 
     /* CENTRE : Tuiles blanches translucides */
     .stLinkButton > a {
@@ -31,22 +39,28 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. FONCTION DE CHARGEMENT AUTOMATIQUE DES ONGLETS
+# 3. FONCTIONS DE CHARGEMENT (CORRIGÉES)
+
 @st.cache_data(ttl=60)
-def load_full_workbook():
-    SHEET_ID = "1nhlDCHOQbXWYVRuMfyCrA7tgTIuA_qtFy5HDkFvQqBk"
-    # On télécharge le fichier complet au format Excel pour avoir tous les onglets
-    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx"
-    return pd.ExcelFile(url)
+def get_all_sheet_names():
+    """Récupère uniquement la liste des noms d'onglets"""
+    # On utilise pd.ExcelFile mais on ne retourne que la liste des noms (serialisable)
+    xl = pd.ExcelFile(BASE_URL, engine='openpyxl')
+    return xl.sheet_names
 
+@st.cache_data(ttl=60)
+def get_data_from_sheet(sheet_name):
+    """Récupère les données d'un onglet spécifique"""
+    return pd.read_excel(BASE_URL, sheet_name=sheet_name, engine='openpyxl')
+
+# 4. EXÉCUTION
 try:
-    xl = load_full_workbook()
-    liste_onglets = xl.sheet_names  # Récupère automatiquement les noms des onglets
+    # Récupération automatique des onglets
+    liste_onglets = get_all_sheet_names()
 
-    # 4. BARRE LATÉRALE DYNAMIQUE
+    # BARRE LATÉRALE
     with st.sidebar:
         st.markdown("## 📂 Navigation")
-        # Le menu se met à jour tout seul avec la liste des onglets !
         choix = st.radio(
             "Choisir l'univers :",
             liste_onglets,
@@ -57,18 +71,20 @@ try:
             st.cache_data.clear()
             st.rerun()
 
-    # 5. AFFICHAGE DE L'UNIVERS CHOISI
+    # AFFICHAGE DE L'UNIVERS
     st.markdown(f"<h1>🚀 Univers : {choix}</h1>", unsafe_allow_html=True)
 
-    # Lecture de l'onglet sélectionné
-    df = xl.parse(choix)
+    # Chargement des données de l'onglet choisi
+    df = get_data_from_sheet(choix)
     
     if df is not None and not df.empty:
         # Barre de recherche
         search = st.text_input("🔍 Rechercher...", label_visibility="collapsed", key="search_bar")
         
         if search:
-            df = df[df['nom'].str.contains(search, case=False, na=False)]
+            # Filtrage sans erreur si la colonne 'nom' existe
+            if 'nom' in df.columns:
+                df = df[df['nom'].str.contains(search, case=False, na=False)]
 
         # Groupement par catégories
         if 'categorie' in df.columns:
@@ -81,15 +97,20 @@ try:
                     cols = st.columns(4)
                     for idx, row in enumerate(apps_cat.itertuples()):
                         with cols[idx % 4]:
+                            # Gestion des liens
+                            url_app = getattr(row, 'url', 'https://google.com')
+                            nom_app = getattr(row, 'nom', 'Inconnu')
+                            ico_app = getattr(row, 'icone', '🌐')
+                            
                             st.link_button(
-                                label=f"{row.icone} {row.nom}", 
-                                url=row.url, 
+                                label=f"{ico_app} {nom_app}", 
+                                url=url_app, 
                                 use_container_width=True
                             )
         else:
-            st.error("Colonne 'categorie' manquante dans cet onglet.")
+            st.warning("La colonne 'categorie' est absente de cet onglet.")
     else:
-        st.warning(f"L'onglet '{choix}' semble vide.")
+        st.info(f"L'onglet '{choix}' ne contient pas encore de données.")
 
 except Exception as e:
-    st.error(f"Erreur lors du chargement : {e}")
+    st.error(f"Oups ! Une erreur est survenue : {e}")
