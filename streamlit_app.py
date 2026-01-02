@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Mon Dashboard Pro", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="My Dashboard Pro", page_icon="🚀", layout="wide")
 
 SHEET_ID = "1nhlDCHOQbXWYVRuMfyCrA7tgTIuA_qtFy5HDkFvQqBk"
 BASE_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx"
@@ -79,7 +79,7 @@ def get_data_from_sheet(sheet_name):
 try:
     liste_onglets = get_all_sheet_names()
     with st.sidebar:
-        st.markdown("### 📂 Mes Applications")
+        st.markdown("### 📂 My Applications")
         choix = st.radio("Navigation", liste_onglets)
         st.divider()
         if st.button("🔄 Actualiser"):
