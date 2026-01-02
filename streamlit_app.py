@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 
 # 1. Configuration de la page
-st.set_page_config(page_title="Mon Dashboard", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="Mon Dashboard Dynamique", page_icon="🚀", layout="wide")
 
-# 2. CSS Personnalisé (Texte noir à gauche et tuiles blanches au centre)
+# 2. CSS Personnalisé (Sidebar Texte Noir + Tuiles blanches)
 st.markdown("""
 <style>
     .stApp { background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%); }
@@ -31,40 +31,43 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. BARRE LATÉRALE
-with st.sidebar:
-    st.markdown("## 📂 Navigation")
-    choix = st.radio(
-        "Choisir l'univers :",
-        ["General", "SMART Trading", "Finance", "Musique"],
-        key="nav_radio"
-    )
-    st.divider()
-    if st.button("🔄 Actualiser les données"):
-        st.cache_data.clear()
-        st.rerun()
-
-# 4. FONCTION DE CHARGEMENT (Méthode CSV Directe)
+# 3. FONCTION DE CHARGEMENT AUTOMATIQUE DES ONGLETS
 @st.cache_data(ttl=60)
-def get_data(sheet_name):
-    # ID de votre document extrait de votre URL
+def load_full_workbook():
     SHEET_ID = "1nhlDCHOQbXWYVRuMfyCrA7tgTIuA_qtFy5HDkFvQqBk"
-    # Construction de l'URL d'export CSV pour l'onglet spécifique
-    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
-    return pd.read_csv(url)
-
-# 5. AFFICHAGE
-st.markdown(f"<h1>🚀 Univers : {choix}</h1>", unsafe_allow_html=True)
+    # On télécharge le fichier complet au format Excel pour avoir tous les onglets
+    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx"
+    return pd.ExcelFile(url)
 
 try:
-    df = get_data(choix)
+    xl = load_full_workbook()
+    liste_onglets = xl.sheet_names  # Récupère automatiquement les noms des onglets
+
+    # 4. BARRE LATÉRALE DYNAMIQUE
+    with st.sidebar:
+        st.markdown("## 📂 Navigation")
+        # Le menu se met à jour tout seul avec la liste des onglets !
+        choix = st.radio(
+            "Choisir l'univers :",
+            liste_onglets,
+            key="nav_radio"
+        )
+        st.divider()
+        if st.button("🔄 Actualiser les données"):
+            st.cache_data.clear()
+            st.rerun()
+
+    # 5. AFFICHAGE DE L'UNIVERS CHOISI
+    st.markdown(f"<h1>🚀 Univers : {choix}</h1>", unsafe_allow_html=True)
+
+    # Lecture de l'onglet sélectionné
+    df = xl.parse(choix)
     
     if df is not None and not df.empty:
         # Barre de recherche
         search = st.text_input("🔍 Rechercher...", label_visibility="collapsed", key="search_bar")
         
         if search:
-            # Filtrage sur la colonne 'nom'
             df = df[df['nom'].str.contains(search, case=False, na=False)]
 
         # Groupement par catégories
@@ -84,10 +87,9 @@ try:
                                 use_container_width=True
                             )
         else:
-            st.error("La colonne 'categorie' est manquante dans votre fichier Google Sheets.")
+            st.error("Colonne 'categorie' manquante dans cet onglet.")
     else:
         st.warning(f"L'onglet '{choix}' semble vide.")
 
 except Exception as e:
-    st.error(f"Erreur de connexion : {e}")
-    st.info("Vérifiez que votre Google Sheet est partagé avec 'Anyone with the link'.")
+    st.error(f"Erreur lors du chargement : {e}")
