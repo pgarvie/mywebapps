@@ -96,17 +96,6 @@ st.markdown("""
     a { text-decoration: none !important; }
     
     h1 { color: #323130 !important; font-weight: 600; font-size: 1.4rem !important; margin-bottom: 20px; }
-    
-    /* Style pour le bouton de déconnexion */
-    .stButton > button[kind="secondary"] {
-        background-color: #d13438;
-        color: white;
-        border: none;
-        width: 100%;
-    }
-    .stButton > button[kind="secondary"]:hover {
-        background-color: #a4262c;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -124,15 +113,18 @@ try:
     with st.sidebar:
         st.markdown("### 📂 Mes Applications")
         choix = st.radio("Navigation", liste_onglets)
-        st.divider()
+        
+        st.markdown("<br>", unsafe_allow_html=True)
         
         # Bouton Actualiser
-        if st.button("🔄 Actualiser", use_container_width=True):
+        actualiser_btn = st.button("🔄 Actualiser", use_container_width=True)
+        if actualiser_btn:
             st.cache_data.clear()
             st.rerun()
         
-        # Bouton Logout - CORRIGÉ : maintenant au bon niveau d'indentation
-        if st.button("🔒 Déconnexion", type="secondary", use_container_width=True):
+        # Bouton Déconnexion
+        deconnexion_btn = st.button("🔒 Déconnexion", use_container_width=True, type="secondary")
+        if deconnexion_btn:
             st.session_state.authenticated = False
             st.rerun()
 
