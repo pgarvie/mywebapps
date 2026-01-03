@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # 1. Configuration de la page
-st.set_page_config(page_title="Mon Dashboard Sécurisé", page_icon="🔒", layout="wide")
+st.set_page_config(page_title="MY SECURED DASHBOARD", page_icon="🔒", layout="wide")
 
 # ========================================
 # SYSTÈME DE VERROUILLAGE (SERRURE)
@@ -111,7 +111,7 @@ def get_data_from_sheet(sheet_name):
 try:
     liste_onglets = get_all_sheet_names()
     with st.sidebar:
-        st.markdown("### 📂 Mes Applications")
+        st.markdown("### 📂 My Web Applications")
         choix = st.radio("Navigation", liste_onglets)
         
         st.markdown("<br>", unsafe_allow_html=True)
