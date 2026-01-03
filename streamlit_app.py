@@ -117,6 +117,10 @@ try:
         if st.button("🔄 Actualiser"):
             st.cache_data.clear()
             st.rerun()
+# ajout d'un bouton logout - si ça ne fonctionne pas, on l'enleve simplement            
+        if st.button("Logout"):
+            st.session_state.authenticated = False
+            st.rerun()
 
     st.markdown(f"<h1>{choix}</h1>", unsafe_allow_html=True)
 
