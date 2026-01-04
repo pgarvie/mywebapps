@@ -13,16 +13,16 @@ def check_password():
         st.session_state.authenticated = False
 
     if not st.session_state.authenticated:
-        st.markdown("<h2 style='text-align: center; color: white;'>🔒 Accès Restreint</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; color: white;'>🔒 Restricted Access</h2>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1,1,1])
         with col2:
-            pwd_input = st.text_input("Entrez le mot de passe pour continuer :", type="password")
-            if st.button("Se connecter"):
+            pwd_input = st.text_input("Enter the password to continue:", type="password")
+            if st.button("Log in"):
                 if pwd_input == st.secrets["MOT_DE_PASSE"]:
                     st.session_state.authenticated = True
                     st.rerun()
                 else:
-                    st.error("❌ Mot de passe incorrect")
+                    st.error("❌ Incorrect password")
         return False
     return True
 
@@ -117,13 +117,13 @@ try:
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Bouton Actualiser
-        actualiser_btn = st.button("🔄 Actualiser", use_container_width=True)
+        actualiser_btn = st.button("🔄 Refresh", use_container_width=True)
         if actualiser_btn:
             st.cache_data.clear()
             st.rerun()
         
         # Bouton Déconnexion
-        deconnexion_btn = st.button("🔒 Déconnexion", use_container_width=True, type="secondary")
+        deconnexion_btn = st.button("🔒 Logout", use_container_width=True, type="secondary")
         if deconnexion_btn:
             st.session_state.authenticated = False
             st.rerun()
